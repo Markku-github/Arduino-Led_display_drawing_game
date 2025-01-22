@@ -1,3 +1,6 @@
+#include "LedMatrix.h"
+#include "Buttons.h"
+
 // Pins for the 74HC595 shift register.
 const int latch_pin = 4; // Pin connected to 74HC959's RCLK pin a.k.a. latch pin (pin 12).
 const int clock_pin = 5; // Pin connected to 74HC595's SRCLK pin a.k.a. clock pin (pin 11). 
@@ -10,22 +13,13 @@ const int down_button = 10;
 const int left_button = 11;
 const int up_button = 12;
 
-const int blink_delay = 750; // Used for cursore blink delay.
+// Create led matrix object.
+LedMatrix led_matrix(latch_pin, clock_pin, data_pin);
+// Create buttons object.
+Buttons buttons(action_button, right_button, down_button, left_button, up_button);
 
 void setup() {
   Serial.begin(9600); // Serial begin.
-
-  // Set the shift register pins to output mode.
-  pinMode(latch_pin, OUTPUT);
-  pinMode(clock_pin, OUTPUT);
-  pinMode(data_pin, OUTPUT);
-
-  // Set the button pins to input mode.
-  pinMode(action_button, INPUT);
-  pinMode(right_button, INPUT);
-  pinMode(down_button, INPUT);
-  pinMode(left_button, INPUT);
-  pinMode(up_button, INPUT);
 }
 
 void loop() {
@@ -49,9 +43,9 @@ void loop() {
   static int *const p_previous_pressed_button = &previous_pressed_button;
 
   // Update position a.k.a. cursor to the led matrix. i.e. lit correct led.
-  displayCursor(p_row, p_column);
+  led_matrix.displayCursor(p_row, p_column);
   // Call the button listener, which update information about button presses.
-  buttonListener(p_pressed_button, p_previous_pressed_button);
+  buttons.buttonListener(p_pressed_button, p_previous_pressed_button);
   
   // Execute only if the previous pressed button was different that the just pressed button.
   // This prevent multiple bit shift if the button press was too long.
@@ -64,75 +58,6 @@ void loop() {
     if (pressed_button == up_button || pressed_button == down_button) {
       bitShift(p_pressed_button, p_row);
     }
-  }
-}
-
-void displayCursor(byte * p_row, byte * p_column) {
-  // Set latch pin down while data is writing. This prevent wrong led lit up.
-  digitalWrite(latch_pin, LOW);
-
-  /* 
-  Send 2 bytes (column and row) to the shift registers. 
-  The first byte (column) passes through the first register and ends up in at the second one.
-  The second byte (row) remains in the first register.
-  */
-  shiftOut(data_pin, clock_pin, LSBFIRST, ~*p_column); // Reverse bits for column.
-  shiftOut(data_pin, clock_pin, LSBFIRST, *p_row);
-  
-  // Set latch pin up so data will be sent to the led matrix.
-  digitalWrite(latch_pin, HIGH);
-}
-
-int buttonListener(int * pressed_button, int * previous_pressed_button) {
-  // Variables declared as static will only be created one time on the first time a function is called.
-  static int left_button_state;
-  static int right_button_state;
-  static int down_button_state;
-  static int up_button_state;
-
-  // Read the state of all buttons.
-  left_button_state = digitalRead(left_button);
-  right_button_state = digitalRead(right_button);
-  down_button_state = digitalRead(down_button);
-  up_button_state = digitalRead(up_button);
-
-  /*
-  This if statement prevent multiple buttons pressed at the same time.
-  */
-  if (left_button_state == HIGH && right_button_state == LOW && down_button_state == LOW && up_button_state == LOW) {
-    // Store the previous pressed button.
-    *previous_pressed_button = *pressed_button;
-
-    // Pressed button was the left button.
-    *pressed_button = left_button;
-  }
-  else if (left_button_state == LOW && right_button_state == HIGH && down_button_state == LOW && up_button_state == LOW) {
-    // Store the previous pressed button.
-    *previous_pressed_button = *pressed_button;
-
-    // Pressed button was the right button.
-    *pressed_button = right_button;
-  }
-  else if (left_button_state == LOW && right_button_state == LOW && down_button_state == HIGH && up_button_state == LOW) {
-    // Store the previous pressed button.
-    *previous_pressed_button = *pressed_button;
-
-    // Pressed button was the down button.
-    *pressed_button = down_button;
-  }
-  else if (left_button_state == LOW && right_button_state == LOW && down_button_state == LOW && up_button_state == HIGH) {
-    // Store the previous pressed button.
-    *previous_pressed_button = *pressed_button;
-
-    // Pressed button was the up button.
-    *pressed_button = up_button;
-  }
-  else {
-    // Store the previous pressed button.
-    *previous_pressed_button = *pressed_button;
-
-    // None or multiple buttons was pressed.
-    *pressed_button = 0;
   }
 }
 
@@ -181,4 +106,5 @@ void bitShift(int * pressed_button, byte * pByte)  {
       default:
         break;
     }
+    
 }
