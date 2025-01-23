@@ -49,57 +49,51 @@ void loop() {
   
   // Execute only if the previous pressed button was different that the just pressed button.
   // This prevent multiple bit shift if the button press was too long.
-  if (previous_pressed_button != pressed_button) {
-    // Check whether the pressed button was left or right button and if so pass the column byte as a parameter.
-    if (pressed_button == right_button || pressed_button == left_button) {
-      bitShift(p_pressed_button, p_column);
-    }
-    // Check whether the pressed button was up or down button and if so pass the row byte as a parameter.
-    if (pressed_button == up_button || pressed_button == down_button) {
-      bitShift(p_pressed_button, p_row);
-    }
+  if (previous_pressed_button != pressed_button) {    
+    bitShift(p_pressed_button, p_column, p_row);
   }
 }
 
-void bitShift(int * pressed_button, byte * pByte)  {
+void bitShift(int * pressed_button, byte * pColumn, byte * pRow)  {
     // This switch statement check which button pressed and shift bytes based on that.
     switch(*pressed_button) {
       case action_button:
+        Serial.println("Action button pressed!");
         break;
 
       case right_button:
-        if (*pByte == (byte)1) {
-          *pByte = (byte)128;
+        if (*pColumn == (byte)1) {
+          *pColumn = (byte)128;
         }
         else {
-          *pByte = *pByte >> 1;
+          *pColumn = *pColumn >> 1;
         }
         break;
 
       case down_button:
-        if (*pByte == (byte)1) {
-          *pByte = (byte)128;
+        if (*pRow == (byte)1) {
+          *pRow = (byte)128;
         }
         else {
-          *pByte = *pByte >> 1;
+          *pRow = *pRow >> 1;
         }
         break;
 
       case left_button:
-        if (*pByte == (byte)128) {
-          *pByte = (byte)1;
+        if (*pColumn == (byte)128) {
+          *pColumn = (byte)1;
         }
         else {
-          *pByte = *pByte << 1;
+          *pColumn = *pColumn << 1;
         }
         break;
 
       case up_button:
-        if (*pByte == (byte)128) {
-          *pByte = (byte)1;
+        if (*pRow == (byte)128) {
+          *pRow = (byte)1;
         }
         else {
-          *pByte = *pByte << 1;
+          *pRow = *pRow << 1;
         }
         break;
 
